@@ -1,0 +1,677 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LegacyConnect</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0c1013;
+      --surface: #141a1e;
+      --surface-2: #1b2328;
+      --border: #2a353b;
+      --text: #eef4f2;
+      --muted: #91a09f;
+      --accent: #53d39c;
+      --accent-strong: #79e6b5;
+      --danger: #ff786f;
+      --warning: #f1bd63;
+      --radius: 8px;
+    }
+
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.55 "Segoe UI", "Microsoft YaHei", sans-serif;
+    }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+
+    .page {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 48px;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding-bottom: 22px;
+      border-bottom: 1px solid var(--border);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .mark {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border: 1px solid #3d6b59;
+      background: #12251e;
+      color: var(--accent-strong);
+      font-weight: 800;
+      letter-spacing: .04em;
+      border-radius: var(--radius);
+    }
+    h1 { margin: 0; font-size: 21px; letter-spacing: 0; }
+    .subtitle { color: var(--muted); font-size: 12px; margin-top: 1px; }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 34px;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: 999px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #63706f;
+    }
+    .dot.on { background: var(--accent); box-shadow: 0 0 0 4px #53d39c18; }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin: 20px 0;
+    }
+    .metric {
+      min-height: 82px;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: var(--radius);
+    }
+    .metric-label { color: var(--muted); font-size: 12px; }
+    .metric-value {
+      margin-top: 7px;
+      font-size: 22px;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1.55fr) minmax(300px, .75fr);
+      gap: 18px;
+      align-items: start;
+    }
+    .panel {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .panel-head {
+      min-height: 58px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .panel-title { font-weight: 700; font-size: 15px; }
+    .panel-body { padding: 14px; }
+
+    .server-list { display: grid; gap: 9px; }
+    .server-item {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      min-height: 78px;
+      padding: 11px 12px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      border-radius: var(--radius);
+    }
+    .server-item.selected { border-color: #458a70; }
+    .server-name {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+    .selected-tag {
+      padding: 2px 6px;
+      color: var(--accent-strong);
+      border: 1px solid #3d6b59;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .server-address, .server-meta {
+      color: var(--muted);
+      font-size: 12px;
+      overflow-wrap: anywhere;
+    }
+    .server-meta { margin-top: 4px; }
+    .server-actions {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .empty {
+      padding: 28px 12px;
+      text-align: center;
+      color: var(--muted);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+    }
+
+    .button {
+      min-height: 34px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 0 11px;
+      border: 1px solid var(--border);
+      background: #20292e;
+      color: var(--text);
+      border-radius: 6px;
+      transition: background .15s, border-color .15s, color .15s;
+    }
+    .button:hover { border-color: #496069; background: #263238; }
+    .button:disabled { opacity: .45; cursor: not-allowed; }
+    .button.primary {
+      color: #07160f;
+      background: var(--accent);
+      border-color: var(--accent);
+      font-weight: 700;
+    }
+    .button.primary:hover { background: var(--accent-strong); }
+    .button.danger { color: var(--danger); }
+    .button.icon { width: 34px; padding: 0; }
+    svg { width: 16px; height: 16px; stroke-width: 2; }
+
+    .control-block + .control-block {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid var(--border);
+    }
+    .control-label { color: var(--muted); font-size: 12px; }
+    .control-value {
+      margin-top: 4px;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+    .control-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .profile-grid {
+      display: grid;
+      grid-template-columns: 1fr 100px;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    #applyProfile {
+      width: 100%;
+      margin-top: 8px;
+    }
+    .notice {
+      margin-top: 14px;
+      padding: 10px 11px;
+      color: #c8d2cf;
+      background: #11191b;
+      border-left: 3px solid var(--warning);
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    dialog {
+      width: min(440px, calc(100% - 24px));
+      padding: 0;
+      color: var(--text);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+    dialog::backdrop { background: #000a; }
+    .dialog-head {
+      padding: 15px 16px;
+      border-bottom: 1px solid var(--border);
+      font-weight: 700;
+    }
+    .dialog-body { padding: 16px; }
+    label { display: block; color: var(--muted); font-size: 12px; }
+    input, select {
+      width: 100%;
+      min-height: 39px;
+      margin-top: 5px;
+      padding: 8px 10px;
+      color: var(--text);
+      background: #0e1316;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      outline: none;
+    }
+    input:focus, select:focus { border-color: var(--accent); }
+    .field + .field { margin-top: 13px; }
+    .dialog-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      max-width: min(420px, calc(100% - 36px));
+      padding: 11px 13px;
+      color: var(--text);
+      background: #20292e;
+      border: 1px solid #496069;
+      border-radius: var(--radius);
+      box-shadow: 0 12px 36px #0007;
+      transform: translateY(20px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .18s, transform .18s;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.error { border-color: #8d4844; }
+
+    @media (max-width: 820px) {
+      .metrics { grid-template-columns: 1fr 1fr; }
+      .workspace { grid-template-columns: 1fr; }
+      header { align-items: flex-start; flex-direction: column; }
+      .server-item { grid-template-columns: 1fr; }
+      .server-actions { justify-content: flex-start; }
+    }
+    @media (max-width: 460px) {
+      .page { width: min(100% - 20px, 1180px); padding-top: 18px; }
+      .metrics { grid-template-columns: 1fr; }
+      .control-actions { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="brand">
+        <div class="mark">LC</div>
+        <div>
+          <h1>LegacyConnect</h1>
+          <div class="subtitle">Minecraft Bedrock 1.16.100.4 / 协议 419</div>
+        </div>
+      </div>
+      <div class="status-pill"><span class="dot" id="statusDot"></span><span id="statusText">正在读取状态</span></div>
+    </header>
+
+    <section class="metrics">
+      <div class="metric"><div class="metric-label">当前目标</div><div class="metric-value" id="metricTarget">未选择</div></div>
+      <div class="metric"><div class="metric-label">本机代理</div><div class="metric-value" id="metricListen">-</div></div>
+      <div class="metric"><div class="metric-label">活动连接</div><div class="metric-value" id="metricActive">0</div></div>
+      <div class="metric"><div class="metric-label">累计流量</div><div class="metric-value" id="metricTraffic">0 B</div></div>
+    </section>
+
+    <div class="workspace">
+      <section class="panel">
+        <div class="panel-head">
+          <div class="panel-title">服务器</div>
+          <div class="server-actions">
+            <button class="button" id="refreshPing" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 12a9 9 0 0 0-15.36-6.36L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 15.36 6.36L21 16"/><path d="M16 16h5v5"/></svg>
+              检测
+            </button>
+            <button class="button primary" id="addServer" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+              添加服务器
+            </button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="server-list" id="serverList"></div>
+        </div>
+      </section>
+
+      <aside class="panel">
+        <div class="panel-head"><div class="panel-title">代理控制</div></div>
+        <div class="panel-body">
+          <div class="control-block">
+            <div class="control-label">连接方式</div>
+            <div class="control-value">在 Minecraft 中添加 <span id="joinAddress">127.0.0.1:19132</span></div>
+          </div>
+          <div class="control-block">
+            <div class="control-label">目标服务器</div>
+            <div class="control-value" id="selectedTarget">未选择</div>
+          </div>
+          <div class="control-block">
+            <label class="control-label" for="profileSelect">版本 / 协议</label>
+            <select id="profileSelect">
+              <option value="1.16.100.4:419">1.16.100.4 · 419</option>
+              <option value="1.12.1:361">1.12.1 · 361</option>
+              <option value="custom">自定义</option>
+            </select>
+            <div class="profile-grid" id="profileCustom" hidden>
+              <input id="profileVersion" maxlength="24" placeholder="版本，例如 1.16.100.4">
+              <input id="profileProtocol" inputmode="numeric" placeholder="协议">
+            </div>
+            <button class="button" id="applyProfile" type="button">应用协议</button>
+          </div>
+          <div class="control-actions">
+            <button class="button primary" id="startProxy" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m5 3 14 9-14 9V3z"/></svg>
+              启动
+            </button>
+            <button class="button" id="stopProxy" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="5" y="5" width="14" height="14"/></svg>
+              停止
+            </button>
+          </div>
+          <div class="notice">透明中转不会修改游戏登录包。只能连接仍兼容协议 419 的服务器，不能把旧版客户端升级到新协议。</div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <dialog id="serverDialog">
+    <form method="dialog" id="serverForm">
+      <div class="dialog-head">添加服务器</div>
+      <div class="dialog-body">
+        <div class="field">
+          <label for="serverName">名称</label>
+          <input id="serverName" maxlength="80" placeholder="我的服务器">
+        </div>
+        <div class="field">
+          <label for="serverAddress">地址</label>
+          <input id="serverAddress" required placeholder="play.example.com:19132">
+        </div>
+        <div class="dialog-actions">
+          <button class="button" value="cancel" type="button" id="cancelServer">取消</button>
+          <button class="button primary" value="default" type="submit">保存</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const icons = {
+      select: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m9 18 6-6-6-6"/></svg>',
+      trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></svg>'
+    };
+    let state = null;
+    let pings = {};
+    let busy = false;
+    let currentProfile = '';
+
+    const $ = (id) => document.getElementById(id);
+    const esc = (value) => String(value ?? '').replace(/[&<>"']/g, char => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[char]));
+
+    async function api(path, options = {}) {
+      const response = await fetch(path, {
+        ...options,
+        headers: { 'Content-Type': 'application/json', ...(options.headers || {}) }
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error || `HTTP ${response.status}`);
+      return body;
+    }
+
+    function toast(message, isError = false) {
+      const el = $('toast');
+      el.textContent = message;
+      el.classList.toggle('error', isError);
+      el.classList.add('show');
+      clearTimeout(el._timer);
+      el._timer = setTimeout(() => el.classList.remove('show'), 2800);
+    }
+
+    function formatBytes(value) {
+      let n = Number(value) || 0;
+      const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+      let index = 0;
+      while (n >= 1024 && index < units.length - 1) { n /= 1024; index++; }
+      return `${n >= 10 || index === 0 ? n.toFixed(0) : n.toFixed(1)} ${units[index]}`;
+    }
+
+    function selectedServer() {
+      if (!state) return null;
+      return state.config.servers.find(server => server.id === state.config.selectedId) || null;
+    }
+
+    function render() {
+      if (!state) return;
+      const proxy = state.proxy;
+      const selected = selectedServer();
+
+      $('statusDot').classList.toggle('on', proxy.running);
+      $('statusText').textContent = proxy.running ? '代理运行中' : '代理已停止';
+      $('metricTarget').textContent = selected ? selected.name : '未选择';
+      $('metricListen').textContent = proxy.listen || '-';
+      $('metricActive').textContent = String(proxy.activeConnections || 0);
+      $('metricTraffic').textContent = formatBytes((proxy.bytesToServer || 0) + (proxy.bytesToClient || 0));
+      $('selectedTarget').textContent = selected ? selected.address : '未选择';
+      $('joinAddress').textContent = proxy.listen || '127.0.0.1:19132';
+      $('startProxy').disabled = busy || proxy.running || !selected;
+      $('stopProxy').disabled = busy || !proxy.running;
+
+      const profileValue = `${proxy.version}:${proxy.protocol}`;
+      if (currentProfile !== profileValue) {
+        currentProfile = profileValue;
+        const preset = [...$('profileSelect').options].find(option => option.value === profileValue);
+        $('profileSelect').value = preset ? profileValue : 'custom';
+        if (!preset) {
+          $('profileVersion').value = proxy.version || '';
+          $('profileProtocol').value = proxy.protocol || '';
+        }
+      }
+      $('profileCustom').hidden = $('profileSelect').value !== 'custom';
+      $('profileVersion').dataset.current = proxy.version || '';
+      $('profileProtocol').dataset.current = String(proxy.protocol || '');
+
+      const list = $('serverList');
+      if (!state.config.servers.length) {
+        list.innerHTML = '<div class="empty">还没有服务器。先添加一个兼容协议 419 的服务器地址。</div>';
+        return;
+      }
+
+      list.innerHTML = state.config.servers.map(server => {
+        const ping = pings[server.id];
+        let meta = '等待检测';
+        if (ping?.loading) meta = '正在检测...';
+        if (ping?.error) meta = `检测失败：${esc(ping.error)}`;
+        if (ping?.data) {
+          const data = ping.data;
+          const compatibility = data.compatible ? '兼容协议 419' : `服务器协议 ${data.protocol}，不兼容`;
+          meta = `${data.version} · ${data.players}/${data.maxPlayers} · ${data.latencyMs} ms · ${compatibility}`;
+        }
+        return `
+          <article class="server-item ${server.id === state.config.selectedId ? 'selected' : ''}">
+            <div>
+              <div class="server-name">
+                <span>${esc(server.name)}</span>
+                ${server.id === state.config.selectedId ? '<span class="selected-tag">当前</span>' : ''}
+              </div>
+              <div class="server-address">${esc(server.address)}</div>
+              <div class="server-meta">${meta}</div>
+            </div>
+            <div class="server-actions">
+              <button class="button" data-action="select" data-id="${esc(server.id)}" type="button">使用</button>
+              <button class="button icon danger" data-action="delete" data-id="${esc(server.id)}" type="button" title="删除">${icons.trash}</button>
+            </div>
+          </article>`;
+      }).join('');
+    }
+
+    async function refresh(showErrors = false) {
+      try {
+        state = await api('/api/state');
+        render();
+      } catch (error) {
+        if (showErrors) toast(error.message, true);
+      }
+    }
+
+    async function pingServer(server) {
+      pings[server.id] = { loading: true };
+      render();
+      try {
+        const data = await api('/api/ping', {
+          method: 'POST',
+          body: JSON.stringify({ address: server.address })
+        });
+        pings[server.id] = { data };
+      } catch (error) {
+        pings[server.id] = { error: error.message };
+      }
+      render();
+    }
+
+    async function pingAll() {
+      if (!state) return;
+      await Promise.all(state.config.servers.map(pingServer));
+    }
+
+    $('addServer').addEventListener('click', () => {
+      $('serverName').value = '';
+      $('serverAddress').value = '';
+      $('serverDialog').showModal();
+    });
+    $('cancelServer').addEventListener('click', () => $('serverDialog').close());
+    $('serverForm').addEventListener('submit', async event => {
+      event.preventDefault();
+      try {
+        busy = true;
+        await api('/api/servers', {
+          method: 'POST',
+          body: JSON.stringify({
+            name: $('serverName').value,
+            address: $('serverAddress').value
+          })
+        });
+        $('serverDialog').close();
+        await refresh(true);
+        await pingAll();
+      } catch (error) {
+        toast(error.message, true);
+      } finally {
+        busy = false;
+        render();
+      }
+    });
+
+    $('serverList').addEventListener('click', async event => {
+      const button = event.target.closest('button[data-action]');
+      if (!button) return;
+      const id = button.dataset.id;
+      const server = state.config.servers.find(item => item.id === id);
+      if (!server) return;
+      try {
+        if (button.dataset.action === 'select') {
+          await api('/api/select', { method: 'POST', body: JSON.stringify({ id }) });
+          toast(`已选择 ${server.name}`);
+        } else {
+          if (!confirm(`删除服务器“${server.name}”？`)) return;
+          await api(`/api/servers/${encodeURIComponent(id)}`, { method: 'DELETE' });
+          delete pings[id];
+        }
+        await refresh(true);
+      } catch (error) {
+        toast(error.message, true);
+      }
+    });
+
+    $('startProxy').addEventListener('click', async () => {
+      busy = true; render();
+      try {
+        await api('/api/start', { method: 'POST' });
+        toast('代理已启动');
+        await refresh(true);
+      } catch (error) {
+        toast(error.message, true);
+      } finally {
+        busy = false; render();
+      }
+    });
+
+    $('stopProxy').addEventListener('click', async () => {
+      busy = true; render();
+      try {
+        await api('/api/stop', { method: 'POST' });
+        toast('代理已停止');
+        await refresh(true);
+      } catch (error) {
+        toast(error.message, true);
+      } finally {
+        busy = false; render();
+      }
+    });
+
+    $('refreshPing').addEventListener('click', pingAll);
+    async function saveProfile(version, protocol) {
+      try {
+        await api('/api/profile', {
+          method: 'POST',
+          body: JSON.stringify({ version, protocol })
+        });
+        currentProfile = '';
+        toast('版本与协议已更新');
+        await refresh(true);
+        await pingAll();
+      } catch (error) {
+        toast(error.message, true);
+      }
+    }
+
+    $('profileSelect').addEventListener('change', () => {
+      const custom = $('profileSelect').value === 'custom';
+      $('profileCustom').hidden = !custom;
+      if (custom) {
+        $('profileVersion').value = $('profileVersion').dataset.current || '';
+        $('profileProtocol').value = $('profileProtocol').dataset.current || '';
+        return;
+      }
+      const [version, protocolText] = $('profileSelect').value.split(':');
+      saveProfile(version, Number(protocolText));
+    });
+    $('applyProfile').addEventListener('click', async () => {
+      const selectedValue = $('profileSelect').value;
+      let version;
+      let protocol;
+      if (selectedValue === 'custom') {
+        version = $('profileVersion').value.trim();
+        protocol = Number($('profileProtocol').value);
+      } else {
+        [version, protocol] = selectedValue.split(':');
+        protocol = Number(protocol);
+      }
+      await saveProfile(version, protocol);
+    });
+    refresh(true);
+    setInterval(() => refresh(false), 2000);
+    setTimeout(pingAll, 600);
+    setInterval(pingAll, 15000);
+  </script>
+</body>
+</html>
